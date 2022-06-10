@@ -1,5 +1,5 @@
 from flask import Flask, request
-from extensions import db
+from host_discovery_SQLite.extensions import db
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hostDB.db'
@@ -7,10 +7,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 app.app_context().push()
 
-import db_classes
 db.create_all()
 
-from db_apis import get_all_hosts, set_host
+from host_discovery_SQLite.db_apis import get_all_hosts, set_host
 
 @app.route('/hosts', methods=["GET", "PUT"])
 def hosts():

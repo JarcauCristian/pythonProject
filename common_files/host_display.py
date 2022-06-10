@@ -17,15 +17,22 @@ def get_hosts():
 
     return response.json()
 
+def set_missing_fields(host):
+
+    for fieldname in ["hostname", "ip_address", "mac_address", "availability", "last_heard", "open_ports"]:
+        if fieldname not in host:
+            host[fieldname] = ""
 
 def print_hosts(hosts, previous_hosts):
 
     subprocess.call("clear")
     print(
-        "\n  __Hostname______________     ___IP_address___   ___MAC_address___  __Avail__   "
-        "__Last_Heard___________\n "
+        "\n  __Hostname______________     ___IP_address___   ___MAC_address___   "
+        + "__Avail__   __Last_Heard___________   __Open_TCP_Ports_____\n"
     )
     for host in hosts.values():
+
+        set_missing_fields(host)
 
         if not host["availability"]:
             color = Fore.RED
@@ -41,6 +48,7 @@ def print_hosts(hosts, previous_hosts):
             + f"   {host['mac']:>17}"
             + f"   {str(host['availability']):>7}"
             + f"   {host['last_heard']:>16}"
+            + f"   {host['open_ports']}"
             + Fore.WHITE
         )
 

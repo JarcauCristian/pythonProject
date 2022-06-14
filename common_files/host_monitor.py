@@ -1,14 +1,19 @@
+import argparse
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from time import sleep
 import socket
 import requests
 import scapy.all as scapy
-import nmap
 
 MONITOR_INTERVAL = 15
 DISCOVERY_INTERVAL = 300
 
+parser = argparse.ArgumentParser(description="Threadpool example")
+parser.add_argument("-poolsize", default=10, help="Size of the threadpool")
+args = parser.parse_args()
+threadpool_size = int(args.poolsize)
 
 def get_hosts():
 
@@ -80,11 +85,12 @@ def ping_host(host):
         host["availability"] = False
         print(f" !!!  Host ping failed: {host['hostname']}")
 
+    update_host(host)
+
 
 def main():
 
     last_discovery = datetime.now()-timedelta(days=1)
-    # last_portscan = datetime.now() - timedelta(days=1)
 
     while True:
 
@@ -94,9 +100,8 @@ def main():
 
         hosts = get_hosts()
 
-        for host in hosts.values():
-            ping_host(host)
-            update_host(host)
+        with ThreadPoolExecutor(max_workers=threadpool_size) as executor:
+            executor.map(ping_host, hosts.values())
 
         sleep(MONITOR_INTERVAL)
 

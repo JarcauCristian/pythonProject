@@ -1,15 +1,21 @@
+import argparse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from time import sleep
 import requests
 import nmap
 
-#The host_portscan is only for the mongodb version of the host descovery.
+parser = argparse.ArgumentParser(description="Threadpool example")
+parser.add_argument("-poolsize", default=10, help="Size of the threadpool")
+args = parser.parse_args()
+threadpool_size = int(args.poolsize)
+
+# The host_portscan is only for the mongodb version of the host descovery.
 
 MONITOR_INTERVAL = 60
 
 
 def get_hosts():
-
     print("\n\n----> Retrieving hosts ...", end="")
     response = requests.get("http://127.0.0.1:5000/hosts")
     if response.status_code != 200:
@@ -21,7 +27,6 @@ def get_hosts():
 
 
 def update_host(host):
-
     print(f"----> Updating host status via REST API: {host['hostname']}", end="")
     rsp = requests.put("http://127.0.0.1:5000/hosts", params={"hostname": host["hostname"]}, json=host)
     if rsp.status_code != 204:
@@ -33,31 +38,29 @@ def update_host(host):
         print(f" Successfully updated host status via REST API: {host['hostname']}")
 
 
-def portscan_hosts(hosts):
+def portscan_hosts(host):
+    ip = host["ip"]
+    print(f"====> Scanning host: {host['hostname']} at IP: {ip}")
+    nm = nmap.PortScanner()
+    nm.scan(ip, '22-1024')
 
-    for host in hosts.values():
+    try:
+        nm[ip]
+    except KeyError as e:
+        print(f" !!!  Scan failed: {e}")
 
-        ip = host["ip"]
-        print(f"====> Scanning host: {host['hostname']} at IP: {ip}")
-        nm = nmap.PortScanner()
-        nm.scan(ip, '22-1024')
-
-        try:
-            nm[ip]
-        except KeyError as e:
-            print(f" !!!  Scan failed: {e}")
-            continue
-
-        print(f"===> Scan results: {nm[ip].all_tcp()}")
-        host["open_ports"] = nm[ip].all_tcp()
-        update_host(host)
+    print(f"===> Scan results: {nm[ip].all_tcp()}")
+    host["open_ports"] = nm[ip].all_tcp()
+    update_host(host)
 
 
 def main():
-
     while True:
-
         hosts = get_hosts()
+
+        with ThreadPoolExecutor(max_workers=threadpool_size) as executor:
+            executor.map(portscan_hosts, hosts.values())
+
         portscan_hosts(hosts)
 
         sleep(MONITOR_INTERVAL)

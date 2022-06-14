@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from extensions import db
 
 
@@ -10,6 +12,16 @@ def get_all_hosts():
     return hosts
 
 
+def get_host(hostname):
+    host = db.hosts.find({"hostname": hostname}, {"_id": 0})
+    return host
+
+
+def get_host_status(host, datapoints):
+    status = db.hosts_status.find({"hostname": host}, {"_id": 0}).sort("time", 1).limit(datapoints)
+    return status
+
+
 def set_host(host):
 
     existing_host = db.hosts.find_one({"hostname": host["hostname"]})
@@ -18,3 +30,11 @@ def set_host(host):
         db.hosts.insert_one(host)
     else:
         db.hosts.update_one({"hostname": host["hostname"]}, {"$set": host})
+
+    host_status = {
+        "time": str(datetime.now())[:-3],
+        "hostname": host["hostname"],
+        "availability": host["availability"],
+    }
+
+    db.hosts_status.insert_one(host_status)

@@ -7,13 +7,13 @@ from apidoc_models import ApiModels
 app = Flask(__name__)
 CORS(app)
 
-api = Api(app, version="1.0", title="My App", description="A simple app that make life easy", default="my-app", default_label="")
+api = Api(app, version="1.0", title="My App", description="A simple app that make life easy", default="my-app",
+          default_label="")
 ApiModels.set_api_models(api)
 
 
 @app.route('/hosts', methods=["GET", "PUT"])
 def hosts():
-
     if request.method == "GET":
         return get_all_hosts(), 200
 
@@ -29,25 +29,14 @@ def hosts():
 
 @app.route('/hosts/status', methods=["GET"])
 def host_satus():
+
     if request.method == "GET":
-        hostname = request.args.get("hostname")
-        datapoints = request.args.get("datapoints")
-
-        if not hostname:
-            return "Must provide a hostname to get status for", 400
-        if not datapoints:
-            datapoints = "24"
-
-        if not datapoints.isnumeric():
-            return "Datapoints must be an integer", 400
-
-        host = get_host(hostname)
+        host = get_host("192.168.1.1")
 
         host_status = {
-            "host": host,
-            "status": get_host_status(hostname, datapoints)
+            "host": host["host"]["hostname"],
+            "status": get_host_status(host["host"]["hostname"])
         }
-
         return host_status, 200
 
 

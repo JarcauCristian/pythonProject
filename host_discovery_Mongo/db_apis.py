@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 from extensions import db
 
 
@@ -13,13 +14,13 @@ def get_all_hosts():
 
 
 def get_host(hostname):
-    host = db.hosts.find({"hostname": hostname}, {"_id": 0})
-    return host
+    host = db.hosts.find({"hostname": hostname})
+    return {"host": remove_internals(ht) for ht in host}
 
 
-def get_host_status(host, datapoints):
-    status = db.hosts_status.find({"hostname": host}, {"_id": 0}).sort("time", 1).limit(datapoints)
-    return status
+def get_host_status(host):
+    status = db.hosts_status.find({"hostname": host}).sort("time", -1).limit(10)
+    return [remove_internals(st) for st in status]
 
 
 def set_host(host):
@@ -36,5 +37,4 @@ def set_host(host):
         "hostname": host["hostname"],
         "availability": host["availability"],
     }
-
     db.hosts_status.insert_one(host_status)
